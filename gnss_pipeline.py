@@ -110,7 +110,7 @@ dataset = dataset.set_index("time")
 # RESAMPLE 15 MIN
 # -------------------------------
 
-dataset_15min = dataset.resample("15T").mean()
+dataset_15min = dataset.resample("15min").mean()
 
 # -------------------------------
 # SAVE DATASET
