@@ -35,7 +35,7 @@ t = 1000  # placeholder time value
 
 clock_error = clock_bias + clock_drift * t + clock_drift_rate * (t ** 2)
 
-clock_error = clock_error.to_dataframe().reset_index()
+clock_error = clock_error.to_dataframe(name="clock_error").reset_index()
 
 # -----------------------------
 # LOAD PRECISE ORBIT DATA
