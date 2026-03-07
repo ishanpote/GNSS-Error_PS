@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TimeSeries Forecast Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --card: #161a22;
+    --border: #1f2535;
+    --accent: #00e5ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --warn: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --soft: #94a3b8;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Animated background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Top glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(0,229,255,0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px 60px;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 32px 0 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+  }
+
+  .logo-block {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    box-shadow: 0 0 24px rgba(0,229,255,0.3);
+    margin-bottom: 16px;
+  }
+
+  .header-text h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(22px, 3vw, 32px);
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+    margin-bottom: 6px;
+  }
+
+  .header-text p {
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+
+  .header-badges {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding-bottom: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+  .badge-cyan { background: rgba(0,229,255,0.1); color: var(--accent); border: 1px solid rgba(0,229,255,0.2); }
+  .badge-violet { background: rgba(124,58,237,0.1); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+  .badge-green { background: rgba(16,185,129,0.1); color: var(--accent3); border: 1px solid rgba(16,185,129,0.2); }
+
+  /* ── Tab Nav ── */
+  .tab-nav {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 6px;
+    margin-bottom: 28px;
+    overflow-x: auto;
+    flex-wrap: wrap;
+  }
+
+  .tab-btn {
+    flex: 1;
+    min-width: 150px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .tab-btn:hover { color: var(--text); background: var(--card); }
+
+  .tab-btn.active {
+    background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(124,58,237,0.12));
+    color: var(--accent);
+    border: 1px solid rgba(0,229,255,0.2);
+    box-shadow: 0 0 16px rgba(0,229,255,0.08);
+  }
+
+  .tab-icon { font-size: 14px; }
+
+  /* ── Tab Panels ── */
+  .tab-panel { display: none; animation: fadeIn 0.3s ease; }
+  .tab-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+  /* ── Grid layouts ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media(max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(0,229,255,0.01);
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.dragging {
+    border-color: var(--accent);
+    background: rgba(0,229,255,0.04);
+    box-shadow: 0 0 24px rgba(0,229,255,0.06);
+  }
+
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon { font-size: 36px; margin-bottom: 12px; }
+  .upload-zone h3 { font-family: 'Syne', sans-serif; font-size: 14px; color: var(--text); margin-bottom: 6px; }
+  .upload-zone p { font-size: 11px; color: var(--muted); }
+
+  /* ── Form controls ── */
+  .form-group { margin-bottom: 16px; }
+  .form-label {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+  }
+
+  .form-input:focus, .form-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.08);
+  }
+
+  .form-input[type=number] { -moz-appearance: textfield; }
+  .form-input[type=number]::-webkit-outer-spin-button,
+  .form-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* ── Stepper ── */
+  .stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .stepper button {
+    width: 38px;
+    height: 38px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stepper button:hover { background: var(--card); color: var(--accent); }
+
+  .stepper input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    text-align: center;
+    padding: 8px 4px;
+    -moz-appearance: textfield;
+  }
+  .stepper input::-webkit-outer-spin-button,
+  .stepper input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  /* ── Toggle chips ── */
+  .toggle-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .toggle-chip input[type=checkbox] { display: none; }
+  .toggle-chip label {
+    display: block;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    transition: all 0.2s;
+    user-select: none;
+  }
+  .toggle-chip input:checked + label {
+    background: rgba(0,229,255,0.1);
+    border-color: rgba(0,229,255,0.35);
+    color: var(--accent);
+  }
+
+  /* ── Primary button ── */
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #4f8ef7);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 24px rgba(0,229,255,0.2);
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 32px rgba(0,229,255,0.35);
+  }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--soft);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── Progress bar ── */
+  .progress-wrap { margin: 12px 0; }
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #4f8ef7);
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    width: 0%;
+    box-shadow: 0 0 8px rgba(0,229,255,0.5);
+  }
+
+  /* ── Model status row ── */
+  .model-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    transition: border-color 0.2s;
+  }
+  .model-row.loaded { border-color: rgba(16,185,129,0.3); }
+  .model-row.failed { border-color: rgba(239,68,68,0.3); }
+  .model-row.loading { border-color: rgba(0,229,255,0.2); }
+
+  .model-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .dot-idle { background: var(--muted); }
+  .dot-loading { background: var(--accent); animation: pulse 1s infinite; }
+  .dot-loaded { background: var(--accent3); }
+  .dot-failed { background: var(--danger); }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .model-name { flex: 1; color: var(--text); }
+  .model-status { font-size: 10px; color: var(--muted); }
+
+  /* ── Log/console ── */
+  .log-console {
+    background: #080b10;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 11px;
+    color: var(--accent3);
+    height: 160px;
+    overflow-y: auto;
+    font-family: 'DM Mono', monospace;
+    line-height: 1.8;
+  }
+
+  .log-line { margin-bottom: 2px; }
+  .log-line .ts { color: var(--muted); margin-right: 8px; }
+  .log-line.warn { color: var(--warn); }
+  .log-line.error { color: var(--danger); }
+  .log-line.info { color: var(--accent); }
+
+  /* ── Results ── */
+  .results-table-wrap {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  thead tr { background: var(--surface); }
+  thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tbody tr { transition: background 0.15s; }
+  tbody tr:hover { background: rgba(0,229,255,0.03); }
+  tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid rgba(31,37,53,0.6);
+    color: var(--soft);
+  }
+
+  td.numeric { color: var(--accent); font-variant-numeric: tabular-nums; }
+  td.time-col { color: var(--text); }
+
+  /* ── Stat cards ── */
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media(max-width: 600px) { .stat-grid { grid-template-columns: repeat(2,1fr); } }
+
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .stat-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 6px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: var(--accent); }
+  .stat-sub { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* ── Download button ── */
+  .btn-download {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: 1px solid rgba(0,229,255,0.3);
+    border-radius: 10px;
+    background: rgba(0,229,255,0.06);
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+  .btn-download:hover { background: rgba(0,229,255,0.12); box-shadow: 0 0 16px rgba(0,229,255,0.15); }
+
+  /* ── Chart placeholder ── */
+  .chart-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-area {
+    height: 200px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .chart-area svg { width: 100%; height: 100%; }
+
+  /* ── Settings page ── */
+  .settings-group {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .settings-row:last-child { border-bottom: none; padding-bottom: 0; }
+
+  .settings-row-label { font-size: 12px; color: var(--text); }
+  .settings-row-desc { font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Toggle switch */
+  .toggle-switch { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+  .toggle-switch input { display: none; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 99px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 16px;
+    height: 16px;
+    background: var(--muted);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-slider { background: rgba(0,229,255,0.2); }
+  .toggle-switch input:checked + .toggle-slider::after { transform: translateX(18px); background: var(--accent); }
+
+  /* ── Docs tab ── */
+  .doc-section { margin-bottom: 28px; }
+  .doc-section h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .doc-section p { font-size: 12px; color: var(--soft); line-height: 1.8; margin-bottom: 8px; }
+
+  .code-block {
+    background: #080b10;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 11px;
+    color: #7dd3fc;
+    overflow-x: auto;
+    margin: 8px 0;
+    line-height: 1.7;
+  }
+  .code-block .kw { color: #c4b5fd; }
+  .code-block .str { color: #86efac; }
+  .code-block .cm { color: var(--muted); }
+
+  .info-box {
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 11px;
+    color: var(--soft);
+    margin: 8px 0;
+    line-height: 1.7;
+  }
+  .info-box strong { color: var(--accent); }
+
+  /* ── Column schema display ── */
+  .schema-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(31,37,53,0.6);
+    font-size: 11px;
+  }
+  .schema-row:last-child { border-bottom: none; }
+  .schema-col { font-family: 'DM Mono'; color: var(--accent); min-width: 160px; }
+  .schema-type { color: var(--accent2); background: rgba(124,58,237,0.1); padding: 2px 8px; border-radius: 6px; font-size: 10px; }
+  .schema-desc { color: var(--muted); flex: 1; }
+
+  /* ── Alert box ── */
+  .alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+  .alert-info { background: rgba(0,229,255,0.06); border: 1px solid rgba(0,229,255,0.2); color: var(--soft); }
+  .alert-warn { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.2); color: #fcd34d; }
+  .alert-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* ── File info pill ── */
+  .file-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(16,185,129,0.08);
+    border: 1px solid rgba(16,185,129,0.2);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--accent3);
+    margin-bottom: 16px;
+  }
+
+  /* ── Inline number badge ── */
+  .num-badge {
+    display: inline-block;
+    background: rgba(0,229,255,0.1);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+</style>
+</head>
+<body>
+<div class="app-wrapper">
+
+  <!-- ── Header ── -->
+  <header>
+    <div>
+      <div class="logo-block">⟁</div>
+    </div>
+    <div class="header-text">
+      <h1>TimeSeries Forecast Suite</h1>
+      <p>Ensemble Prediction · 15-min GNSS Error Forecasting · Multi-model Voting</p>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-cyan">GRU · LSTM</span>
+      <span class="badge badge-violet">Transformer</span>
+      <span class="badge badge-green">GP Ensemble</span>
+    </div>
+  </header>
+
+  <!-- ── Tab Nav ── -->
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('upload')" id="tab-upload">
+      <span class="tab-icon">⬆</span> Upload & Predict
+    </button>
+    <button class="tab-btn" onclick="switchTab('results')" id="tab-results">
+      <span class="tab-icon">◈</span> Results & Export
+    </button>
+    <button class="tab-btn" onclick="switchTab('models')" id="tab-models">
+      <span class="tab-icon">◻</span> Model Status
+    </button>
+    <button class="tab-btn" onclick="switchTab('settings')" id="tab-settings">
+      <span class="tab-icon">◎</span> Configuration
+    </button>
+    <button class="tab-btn" onclick="switchTab('docs')" id="tab-docs">
+      <span class="tab-icon">≡</span> Documentation
+    </button>
+  </nav>
+
+  <!-- ── TAB: Upload & Predict ── -->
+  <div class="tab-panel active" id="panel-upload">
+
+    <div class="grid-2" style="gap:20px; align-items:start;">
+
+      <!-- Left: Upload + params -->
+      <div>
+        <p class="section-label">Data Input</p>
+
+        <div class="upload-zone" id="dropZone">
+          <input type="file" id="csvInput" accept=".csv" onchange="handleFile(event)"/>
+          <div class="upload-icon">📂</div>
+          <h3>Drop CSV file here or click to browse</h3>
+          <p>Required columns: utc_time · x_error(m) · y_error(m) · z_error(m) · satclockerror(m)</p>
+        </div>
+
+        <div id="filePill" style="display:none; margin-top:12px;"></div>
+
+        <div style="margin-top:20px;">
+          <p class="section-label">Sequence Parameters</p>
+
+          <div class="grid-2">
+            <div class="form-group">
+              <label class="form-label">Past Days (History Window)</label>
+              <div class="stepper">
+                <button onclick="stepperChange('pastDays', -1)">−</button>
+                <input type="number" id="pastDays" value="7" min="1" max="30"/>
+                <button onclick="stepperChange('pastDays', 1)">+</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Future Days to Predict</label>
+              <div class="stepper">
+                <button onclick="stepperChange('futureDays', -1)">−</button>
+                <input type="number" id="futureDays" value="1" min="1" max="14"/>
+                <button onclick="stepperChange('futureDays', 1)">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Points Per Day</label>
+            <input type="number" class="form-input" id="pointsPerDay" value="41" readonly style="opacity:0.5; cursor:not-allowed;"/>
+          </div>
+        </div>
+
+        <div style="margin-top:20px;">
+          <p class="section-label">Active Models</p>
+          <div class="toggle-group" id="modelToggles">
+            <div class="toggle-chip"><input type="checkbox" id="m_gru" checked/><label for="m_gru">GRU</label></div>
+            <div class="toggle-chip"><input type="checkbox" id="m_bigru" checked/><label for="m_bigru">biGRU</label></div>
+            <div class="toggle-chip"><input type="checkbox" id="m_lstm" checked/><label for="m_lstm">LSTM</label></div>
+            <div class="toggle-chip"><input type="checkbox" id="m_bilstm" checked/><label for="m_bilstm">biLSTM</label></div>
+            <div class="toggle-chip"><input type="checkbox" id="m_transformer" checked/><label for="m_transformer">Transformer</label></div>
+            <div class="toggle-chip"><input type="checkbox" id="m_gp" checked/><label for="m_gp">Gaussian Process</label></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Run prediction -->
+      <div>
+        <p class="section-label">Prediction Run</p>
+
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-title">⚡ Run Summary</div>
+
+          <div style="margin-bottom:14px;">
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px;">
+              <span>File loaded</span>
+              <span id="summaryFile" style="color:var(--text)">—</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px;">
+              <span>Rows</span>
+              <span id="summaryRows" style="color:var(--text)">—</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px;">
+              <span>Sequence length</span>
+              <span id="summarySeq" style="color:var(--text)">287 pts</span>
+            </div>
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--muted);">
+              <span>Output timesteps</span>
+              <span id="summaryOut" style="color:var(--text)">41 pts</span>
+            </div>
+          </div>
+
+          <button class="btn-primary" id="runBtn" onclick="runPrediction()" disabled>
+            ▶ Run Ensemble Prediction
+          </button>
+          <button class="btn-secondary" onclick="resetAll()">↺ Reset</button>
+        </div>
+
+        <!-- Progress block (hidden by default) -->
+        <div id="progressBlock" style="display:none;">
+          <div class="card">
+            <div class="card-title">⟳ Processing</div>
+            <div id="progressSteps"></div>
+            <div class="progress-wrap" style="margin-top:8px;">
+              <div class="progress-label"><span id="progressLabel">Loading models...</span><span id="progressPct">0%</span></div>
+              <div class="progress-track"><div class="progress-fill" id="progressBar"></div></div>
+            </div>
+            <div class="log-console" id="logConsole"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Results ── -->
+  <div class="tab-panel" id="panel-results">
+    <div id="noResults" class="alert alert-warn">
+      <span class="alert-icon">⚠</span>
+      <span>No prediction results available yet. Run a prediction from the <strong>Upload & Predict</strong> tab first.</span>
+    </div>
+
+    <div id="resultsContent" style="display:none;">
+      <div class="stat-grid" id="statGrid"></div>
+
+      <div class="chart-wrap">
+        <div class="card-title" style="margin-bottom:12px;">📈 Predicted Error Channels</div>
+        <div class="chart-area" id="chartArea">
+          <svg id="forecastChart" viewBox="0 0 900 200" preserveAspectRatio="none"></svg>
+        </div>
+        <div style="display:flex; gap:16px; margin-top:10px; font-size:10px; color:var(--muted);">
+          <span style="color:#00e5ff">— x_error</span>
+          <span style="color:#a78bfa">— y_error</span>
+          <span style="color:#10b981">— z_error</span>
+          <span style="color:#f59e0b">— satclockerror</span>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <p class="section-label" style="margin:0; flex:1;">Prediction Output</p>
+        <a id="downloadLink" class="btn-download" download="ensemble_voting_output.csv">⬇ Download CSV</a>
+      </div>
+
+      <div class="results-table-wrap">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th>UTC Time</th>
+              <th>x_error (m)</th>
+              <th>y_error (m)</th>
+              <th>z_error (m)</th>
+              <th>satclockerror (m)</th>
+            </tr>
+          </thead>
+          <tbody id="resultsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Model Status ── -->
+  <div class="tab-panel" id="panel-models">
+    <div class="grid-2" style="gap:20px; align-items:start;">
+      <div>
+        <p class="section-label">Loaded Models</p>
+        <div id="modelStatusList">
+          <!-- populated by JS -->
+        </div>
+      </div>
+      <div>
+        <p class="section-label">Ensemble Composition</p>
+        <div class="card">
+          <div class="card-title">⟁ Voting Average Details</div>
+          <p style="font-size:11px; color:var(--muted); line-height:1.8; margin-bottom:12px;">
+            All active models contribute equally to the final prediction via a simple mean (voting average) across the time and feature dimensions.
+          </p>
+          <div id="ensembleBreakdown"></div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-title">◈ Architecture Overview</div>
+          <div style="font-size:11px; color:var(--muted); line-height:2;">
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span>GRU (bidir)</span><span style="color:var(--text)">hidden=98, layers=2</span></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span>biGRU</span><span style="color:var(--text)">hidden=107, layers=2</span></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span>LSTM</span><span style="color:var(--text)">hidden=196, layers=2</span></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span>biLSTM</span><span style="color:var(--text)">hidden=115, layers=1</span></div>
+            <div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding:4px 0;"><span>Transformer</span><span style="color:var(--text)">d_model=128, heads=4</span></div>
+            <div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Gaussian Process</span><span style="color:var(--text)">per-feature per-step</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Configuration ── -->
+  <div class="tab-panel" id="panel-settings">
+    <div class="grid-2" style="gap:20px; align-items:start;">
+      <div>
+        <p class="section-label">Application Settings</p>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Dark Theme</div>
+              <div class="settings-row-desc">Use dark background (always on)</div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" checked disabled/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Show Prediction Log</div>
+              <div class="settings-row-desc">Display detailed console output during run</div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="showLog" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Auto-switch to Results Tab</div>
+              <div class="settings-row-desc">Jump to Results when prediction completes</div>
+            </div>
+            <label class="toggle-switch"><input type="checkbox" id="autoSwitch" checked/><span class="toggle-slider"></span></label>
+          </div>
+          <div class="settings-row">
+            <div>
+              <div class="settings-row-label">Max preview rows</div>
+              <div class="settings-row-desc">Rows shown in results table</div>
+            </div>
+            <div style="width:90px;">
+              <input type="number" class="form-input" id="maxRows" value="200" style="padding:6px 10px;font-size:12px;"/>
+            </div>
+          </div>
+        </div>
+
+        <p class="section-label">Model Paths</p>
+        <div class="settings-group">
+          <div class="form-group">
+            <label class="form-label">Model Directory</label>
+            <input class="form-input" type="text" value="./model" id="modelDir"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Scaler Path</label>
+            <input class="form-input" type="text" value="./scaler/scaler.pkl" id="scalerPath"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">GP Scaler Path</label>
+            <input class="form-input" type="text" value="./model/scaler_gp.pkl" id="gpScalerPath"/>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="section-label">Output Format</p>
+        <div class="settings-group">
+          <div class="form-group">
+            <label class="form-label">Timestamp Format</label>
+            <select class="form-select" id="tsFormat">
+              <option value="DD-MM-YYYY HH:mm">DD-MM-YYYY HH:mm (default)</option>
+              <option value="YYYY-MM-DD HH:mm:ss">ISO 8601</option>
+              <option value="MM/DD/YYYY HH:mm">US Format</option>
+              <option value="unix">Unix Epoch (ms)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Decimal Places</label>
+            <input type="number" class="form-input" value="6" min="2" max="10" id="decimalPlaces"/>
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Output Filename</label>
+            <input type="text" class="form-input" value="ensemble_voting_output.csv" id="outputFilename"/>
+          </div>
+        </div>
+
+        <p class="section-label">Prediction Interval</p>
+        <div class="settings-group">
+          <div class="form-group" style="margin-bottom:0;">
+            <label class="form-label">Interval (minutes)</label>
+            <div class="stepper">
+              <button onclick="stepperChange('intervalMin', -5)">−</button>
+              <input type="number" id="intervalMin" value="15" min="1"/>
+              <button onclick="stepperChange('intervalMin', 5)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" style="margin-top:4px;" onclick="saveSettings()">Save Configuration</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TAB: Docs ── -->
+  <div class="tab-panel" id="panel-docs">
+    <div class="grid-2" style="gap:24px; align-items:start;">
+      <div>
+        <div class="doc-section">
+          <h3>📄 Overview</h3>
+          <p>This application performs ensemble time-series forecasting of GNSS satellite clock and positional errors at 15-minute intervals using a mixture of neural network architectures and Gaussian Process models.</p>
+          <div class="info-box">
+            <strong>Ensemble strategy:</strong> Simple voting average — each enabled model contributes equally to the final prediction by averaging raw (scaled) outputs before inverse transformation.
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <h3>📥 Input CSV Format</h3>
+          <p>Your CSV must contain exactly the following columns in any order:</p>
+          <div style="margin-top:8px;">
+            <div class="schema-row"><span class="schema-col">utc_time</span><span class="schema-type">string</span><span class="schema-desc">Timestamp in any parseable format (e.g. DD-MM-YYYY HH:mm)</span></div>
+            <div class="schema-row"><span class="schema-col">x_error(m)</span><span class="schema-type">float</span><span class="schema-desc">X-axis position error in metres</span></div>
+            <div class="schema-row"><span class="schema-col">y_error(m)</span><span class="schema-type">float</span><span class="schema-desc">Y-axis position error in metres</span></div>
+            <div class="schema-row"><span class="schema-col">z_error(m)</span><span class="schema-type">float</span><span class="schema-desc">Z-axis position error in metres</span></div>
+            <div class="schema-row"><span class="schema-col">satclockerror(m)</span><span class="schema-type">float</span><span class="schema-desc">Satellite clock error equivalent in metres</span></div>
+          </div>
+          <div class="info-box" style="margin-top:10px;">
+            <strong>Minimum rows required:</strong> <code>past_days × 41</code> (e.g. 7 days → 287 rows minimum)
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="doc-section">
+          <h3>🧠 Model Reference</h3>
+          <p>Six models are available in the ensemble. Each is loaded from a separate <code>.pth</code> (PyTorch) or <code>.pkl</code> (scikit-learn joblib) file in the model directory.</p>
+          <div class="code-block">
+<span class="cm"># GRU — Bidirectional Gated Recurrent Unit</span>
+hidden_size=<span class="str">98</span>, num_layers=<span class="str">2</span>, dropout=<span class="str">0.3</span>
+
+<span class="cm"># biGRU — Bidirectional GRU (larger)</span>
+hidden_size=<span class="str">107</span>, num_layers=<span class="str">2</span>
+
+<span class="cm"># LSTM — Long Short-Term Memory (unidirectional)</span>
+hidden_size=<span class="str">196</span>, num_layers=<span class="str">2</span>
+
+<span class="cm"># biLSTM — Bidirectional LSTM (single layer)</span>
+hidden_size=<span class="str">115</span>, num_layers=<span class="str">1</span>
+
+<span class="cm"># Transformer — Time-Series Transformer Encoder</span>
+d_model=<span class="str">128</span>, nhead=<span class="str">4</span>, dim_feedforward=<span class="str">409</span>
+
+<span class="cm"># GP — Gaussian Process (separate model per feature/timestep)</span>
+format: dict{<span class="str">"x_error_t0"</span>: GPModel, ...}
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <h3>📤 Output Format</h3>
+          <p>The output CSV mirrors the input column structure with predicted values starting from the next 15-minute interval after the last input timestamp.</p>
+          <div class="code-block">
+utc_time, x_error(m), y_error(m), z_error(m), satclockerror(m)
+<span class="str">08-03-2025 00:15</span>, <span class="str">0.231456</span>, <span class="str">-0.145221</span>, ...
+          </div>
+        </div>
+
+        <div class="doc-section">
+          <h3>⚠️ Troubleshooting</h3>
+          <p>Common issues and resolutions:</p>
+          <div class="alert alert-warn"><span class="alert-icon">⚠</span><span><strong>Scaler version mismatch</strong> — retrain and re-export the scaler with your current scikit-learn version.</span></div>
+          <div class="alert alert-info"><span class="alert-icon">ℹ</span><span><strong>Not enough rows</strong> — ensure your CSV has at least <em>past_days × 41</em> rows before the prediction window.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app-wrapper -->
+
+<script>
+// ── Tab switching ──────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// ── Stepper ──────────────────────────────────────────────────
+function stepperChange(id, delta) {
+  const el = document.getElementById(id);
+  let val = parseInt(el.value) + delta;
+  const min = parseInt(el.min) || 1;
+  if (val < min) val = min;
+  el.value = val;
+  updateSummary();
+}
+
+// ── Drag & drop ──────────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+['dragenter','dragover'].forEach(evt => dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('dragging'); }));
+['dragleave','drop'].forEach(evt => dropZone.addEventListener(evt, () => dropZone.classList.remove('dragging')));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+});
+
+let uploadedFile = null;
+let parsedRows = 0;
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  uploadedFile = file;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l => l.trim());
+    parsedRows = lines.length - 1; // minus header
+    document.getElementById('filePill').innerHTML =
+      `<div class="file-pill">✓ ${file.name} <span class="num-badge">${parsedRows} rows</span></div>`;
+    document.getElementById('filePill').style.display = 'block';
+    document.getElementById('summaryFile').textContent = file.name;
+    document.getElementById('summaryRows').textContent = parsedRows.toLocaleString();
+    document.getElementById('runBtn').disabled = false;
+    updateSummary();
+    addLog('info', `File loaded: ${file.name} (${parsedRows} rows)`);
+  };
+  reader.readAsText(file);
+}
+
+function updateSummary() {
+  const past = parseInt(document.getElementById('pastDays').value) || 7;
+  const future = parseInt(document.getElementById('futureDays').value) || 1;
+  const ppd = 41;
+  document.getElementById('summarySeq').textContent = `${past * ppd} pts`;
+  document.getElementById('summaryOut').textContent = `${future * ppd} pts`;
+}
+
+// ── Log console ──────────────────────────────────────────────
+function addLog(type, msg) {
+  const console_ = document.getElementById('logConsole');
+  if (!console_) return;
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const line = document.createElement('div');
+  line.className = `log-line ${type}`;
+  line.innerHTML = `<span class="ts">${ts}</span>${msg}`;
+  console_.appendChild(line);
+  console_.scrollTop = console_.scrollHeight;
+}
+
+// ── Model status init ────────────────────────────────────────
+const MODELS = [
+  { key: 'GRU', name: 'GRU', desc: 'Bidirectional GRU · h=98' },
+  { key: 'biGRU', name: 'biGRU', desc: 'Bidirectional GRU · h=107' },
+  { key: 'LSTM', name: 'LSTM', desc: 'Unidirectional LSTM · h=196' },
+  { key: 'biLSTM', name: 'biLSTM', desc: 'Bidirectional LSTM · h=115' },
+  { key: 'Transformer', name: 'Transformer', desc: 'd_model=128, nhead=4' },
+  { key: 'GP', name: 'Gaussian Process', desc: 'GP per feature/timestep' },
+];
+
+function renderModelStatus(statuses) {
+  const list = document.getElementById('modelStatusList');
+  list.innerHTML = '';
+  MODELS.forEach(m => {
+    const s = statuses[m.key] || 'idle';
+    const dotClass = { idle:'dot-idle', loading:'dot-loading', loaded:'dot-loaded', failed:'dot-failed' }[s] || 'dot-idle';
+    const rowClass = { loaded:'loaded', failed:'failed', loading:'loading' }[s] || '';
+    list.innerHTML += `
+      <div class="model-row ${rowClass}">
+        <div class="model-dot ${dotClass}"></div>
+        <div class="model-name">${m.name}</div>
+        <div class="model-status">${m.desc}</div>
+        <div class="model-status" style="margin-left:8px; color:${s==='loaded'?'var(--accent3)':s==='failed'?'var(--danger)':'var(--muted)'}">
+          ${s === 'idle' ? '—' : s === 'loading' ? '⟳ loading' : s === 'loaded' ? '✓ ready' : '✕ failed'}
+        </div>
+      </div>`;
+  });
+
+  // Ensemble breakdown
+  const eb = document.getElementById('ensembleBreakdown');
+  const loaded = MODELS.filter(m => statuses[m.key] === 'loaded');
+  const pct = loaded.length > 0 ? (100 / loaded.length).toFixed(1) : '—';
+  eb.innerHTML = loaded.map(m => `
+    <div style="display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border); font-size:11px;">
+      <div style="width:8px;height:8px;border-radius:50%;background:var(--accent3)"></div>
+      <span style="flex:1;color:var(--text)">${m.name}</span>
+      <span style="color:var(--muted)">${pct}% weight</span>
+    </div>`).join('') || '<p style="font-size:11px;color:var(--muted)">No models loaded yet.</p>';
+}
+
+renderModelStatus({});
+
+// ── Run prediction (simulated) ────────────────────────────────
+let simulatedData = null;
+
+function runPrediction() {
+  if (!uploadedFile) return;
+
+  document.getElementById('progressBlock').style.display = 'block';
+  document.getElementById('runBtn').disabled = true;
+
+  const logEl = document.getElementById('logConsole');
+  logEl.innerHTML = '';
+
+  let statuses = {};
+  let step = 0;
+  const steps = MODELS.map(m => m.key);
+  const total = steps.length + 2; // +2 for scaler load & combine
+
+  function setProgress(pct, label) {
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = Math.round(pct) + '%';
+    document.getElementById('progressLabel').textContent = label;
+  }
+
+  setProgress(5, 'Loading scalers...');
+  addLog('info', 'Loading scaler.pkl...');
+
+  const past = parseInt(document.getElementById('pastDays').value);
+  const future = parseInt(document.getElementById('futureDays').value);
+
+  // Check row count
+  const required = past * 41;
+  if (parsedRows < required) {
+    addLog('error', `Not enough rows! Need ${required}, got ${parsedRows}`);
+    setProgress(0, 'Error');
+    document.getElementById('runBtn').disabled = false;
+    return;
+  }
+
+  setTimeout(() => {
+    addLog('info', 'Scaler loaded ✓');
+    addLog('info', 'Initializing ensemble...');
+
+    function loadNextModel() {
+      if (step >= steps.length) {
+        setProgress(90, 'Combining predictions (voting average)...');
+        addLog('info', 'Running ensemble voting average...');
+        setTimeout(finalize, 600);
+        return;
+      }
+      const key = steps[step];
+      statuses[key] = 'loading';
+      renderModelStatus(statuses);
+      setProgress(10 + (step / steps.length) * 70, `Loading ${MODELS[step].name}...`);
+      addLog('', `Loading model: ${MODELS[step].name}`);
+
+      setTimeout(() => {
+        // Simulate occasional failure (GP always loads for demo)
+        statuses[key] = 'loaded';
+        renderModelStatus(statuses);
+        addLog('info', `${MODELS[step].name} loaded ✓`);
+        step++;
+        setTimeout(loadNextModel, 200);
+      }, 400 + Math.random() * 300);
+    }
+
+    setTimeout(loadNextModel, 400);
+  }, 500);
+
+  function finalize() {
+    setProgress(100, 'Done!');
+    addLog('info', 'Inverse transform complete.');
+    addLog('info', 'Building output CSV...');
+    addLog('info', `Generated ${future * 41} prediction timesteps.`);
+
+    // Generate demo prediction data
+    simulatedData = generateDemoData(future * 41);
+    renderResults(simulatedData);
+
+    setTimeout(() => {
+      const autoSwitch = document.getElementById('autoSwitch').checked;
+      if (autoSwitch) switchTab('results');
+    }, 400);
+  }
+}
+
+function generateDemoData(n) {
+  const rows = [];
+  let base = new Date();
+  base.setSeconds(0, 0);
+  for (let i = 0; i < n; i++) {
+    const t = new Date(base.getTime() + i * 15 * 60000);
+    const pad = v => String(v).padStart(2,'0');
+    const ts = `${pad(t.getDate())}-${pad(t.getMonth()+1)}-${t.getFullYear()} ${pad(t.getHours())}:${pad(t.getMinutes())}`;
+    rows.push({
+      utc_time: ts,
+      x: (Math.sin(i*0.3)*0.3 + (Math.random()-0.5)*0.05).toFixed(6),
+      y: (Math.cos(i*0.25)*0.25 + (Math.random()-0.5)*0.04).toFixed(6),
+      z: (Math.sin(i*0.2)*0.2 + (Math.random()-0.5)*0.03).toFixed(6),
+      s: (Math.sin(i*0.15+1)*0.15 + (Math.random()-0.5)*0.02).toFixed(6),
+    });
+  }
+  return rows;
+}
+
+function renderResults(data) {
+  document.getElementById('noResults').style.display = 'none';
+  document.getElementById('resultsContent').style.display = 'block';
+
+  // Stats
+  const past = document.getElementById('pastDays').value;
+  const future = document.getElementById('futureDays').value;
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Models Used</div><div class="stat-value">6</div><div class="stat-sub">Voting ensemble</div></div>
+    <div class="stat-card"><div class="stat-label">Past Days</div><div class="stat-value">${past}</div><div class="stat-sub">${past*41} points</div></div>
+    <div class="stat-card"><div class="stat-label">Future Days</div><div class="stat-value">${future}</div><div class="stat-sub">${data.length} timesteps</div></div>
+    <div class="stat-card"><div class="stat-label">Interval</div><div class="stat-value">15</div><div class="stat-sub">minutes</div></div>
+  `;
+
+  // Chart (SVG sparklines)
+  drawChart(data);
+
+  // Table
+  const maxRows = parseInt(document.getElementById('maxRows').value) || 200;
+  const tbody = document.getElementById('resultsBody');
+  tbody.innerHTML = data.slice(0, maxRows).map(r => `
+    <tr>
+      <td class="time-col">${r.utc_time}</td>
+      <td class="numeric">${r.x}</td>
+      <td class="numeric">${r.y}</td>
+      <td class="numeric">${r.z}</td>
+      <td class="numeric">${r.s}</td>
+    </tr>`).join('');
+
+  // CSV download
+  const csv = ['utc_time,x_error(m),y_error(m),z_error(m),satclockerror(m)',
+    ...data.map(r => `${r.utc_time},${r.x},${r.y},${r.z},${r.s}`)].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const dl = document.getElementById('downloadLink');
+  dl.href = url;
+  const fname = document.getElementById('outputFilename')?.value || 'ensemble_voting_output.csv';
+  dl.download = fname;
+}
+
+function drawChart(data) {
+  const svg = document.getElementById('forecastChart');
+  const W = 900, H = 200, PAD = 20;
+
+  const channels = [
+    { key: 'x', color: '#00e5ff' },
+    { key: 'y', color: '#a78bfa' },
+    { key: 'z', color: '#10b981' },
+    { key: 's', color: '#f59e0b' },
+  ];
+
+  const allVals = data.flatMap(r => channels.map(c => parseFloat(r[c.key])));
+  const minV = Math.min(...allVals), maxV = Math.max(...allVals);
+  const range = maxV - minV || 1;
+
+  function pathFor(key) {
+    return data.map((r, i) => {
+      const px = PAD + (i / (data.length - 1)) * (W - PAD * 2);
+      const py = PAD + (1 - (parseFloat(r[key]) - minV) / range) * (H - PAD * 2);
+      return (i === 0 ? 'M' : 'L') + px.toFixed(1) + ',' + py.toFixed(1);
+    }).join(' ');
+  }
+
+  svg.innerHTML = channels.map(c =>
+    `<path d="${pathFor(c.key)}" stroke="${c.color}" stroke-width="1.5" fill="none" opacity="0.85"/>`
+  ).join('');
+}
+
+function resetAll() {
+  uploadedFile = null;
+  parsedRows = 0;
+  simulatedData = null;
+  document.getElementById('filePill').style.display = 'none';
+  document.getElementById('summaryFile').textContent = '—';
+  document.getElementById('summaryRows').textContent = '—';
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('progressBlock').style.display = 'none';
+  document.getElementById('noResults').style.display = 'block';
+  document.getElementById('resultsContent').style.display = 'none';
+  document.getElementById('csvInput').value = '';
+  renderModelStatus({});
+}
+
+function saveSettings() {
+  const btn = event.target;
+  btn.textContent = '✓ Saved!';
+  btn.style.background = 'linear-gradient(135deg, var(--accent3), #059669)';
+  setTimeout(() => {
+    btn.textContent = 'Save Configuration';
+    btn.style.background = '';
+  }, 1800);
+}
+
+// Init summary
+updateSummary();
+document.getElementById('pastDays').addEventListener('input', updateSummary);
+document.getElementById('futureDays').addEventListener('input', updateSummary);
+</script>
+</body>
+</html>
