@@ -1,98 +1,95 @@
 import georinex as gr
 import pandas as pd
 import numpy as np
+import os
 
-# -----------------------------
+# -------------------------------
 # FILE PATHS
-# -----------------------------
+# -------------------------------
 
-NAV_FILE = "project\\brdc0660.26n"
-SP3_FILE = "project\\GFZ0MGXRAP_20260660000_01D_05M_ORB.SP3"
-CLK_FILE = "project\\GFZ0MGXRAP_20260660000_01D_30S_CLK.CLK"
+NAV_FILE = "brdc0660.26n"
+SP3_FILE = "GFZ0MGXRAP_20260660000_01D_05M_ORB.SP3"
 
-# -----------------------------
-# LOAD NAVIGATION DATA
-# -----------------------------
+# -------------------------------
+# DEBUG: SHOW FILES
+# -------------------------------
 
-print("Loading RINEX Navigation File...")
+print("Current working directory:", os.getcwd())
+print("Files in folder:", os.listdir())
+
+# -------------------------------
+# LOAD NAVIGATION FILE
+# -------------------------------
+
+print("\nLoading RINEX Navigation File...")
 
 nav = gr.load(NAV_FILE)
+
+print("Navigation file loaded")
 
 # Extract clock parameters
 clock_bias = nav["SVclockBias"]
 clock_drift = nav["SVclockDrift"]
 clock_drift_rate = nav["SVclockDriftRate"]
 
-print("Navigation file loaded")
-
-# -----------------------------
-# COMPUTE BROADCAST CLOCK ERROR
-# -----------------------------
+# -------------------------------
+# COMPUTE CLOCK ERROR
+# -------------------------------
 
 print("Computing broadcast clock error...")
 
-t = 1000  # placeholder time value
+t = 1000
 
 clock_error = clock_bias + clock_drift * t + clock_drift_rate * (t ** 2)
 
-clock_error = clock_error.to_dataframe(name="clock_error").reset_index()
+clock_error_df = clock_error.to_dataframe(name="clock_error").reset_index()
 
-# -----------------------------
-# LOAD PRECISE ORBIT DATA
-# -----------------------------
+# -------------------------------
+# LOAD PRECISE ORBIT FILE
+# -------------------------------
 
-print("Loading SP3 precise orbit file...")
+print("\nLoading SP3 precise orbit file...")
 
 sp3 = gr.load(SP3_FILE)
 
-# Extract positions
-precise_x = sp3["position_x"]
-precise_y = sp3["position_y"]
-precise_z = sp3["position_z"]
+print("SP3 orbit file loaded")
 
-precise_x = precise_x.to_dataframe().reset_index()
-precise_y = precise_y.to_dataframe().reset_index()
-precise_z = precise_z.to_dataframe().reset_index()
+# SP3 coordinates
+precise_x = sp3["x"].to_dataframe(name="x").reset_index()
+precise_y = sp3["y"].to_dataframe(name="y").reset_index()
+precise_z = sp3["z"].to_dataframe(name="z").reset_index()
 
-print("SP3 orbit data loaded")
+# -------------------------------
+# SIMULATE BROADCAST ORBIT
+# -------------------------------
 
-# -----------------------------
-# SIMULATE BROADCAST POSITION
-# -----------------------------
-# Normally computed using Kepler equations
-# For prototype we approximate
+print("Simulating broadcast orbit...")
 
-print("Computing broadcast satellite position (approx)...")
+broadcast_x = precise_x["x"] + np.random.normal(0, 2, len(precise_x))
+broadcast_y = precise_y["y"] + np.random.normal(0, 2, len(precise_y))
+broadcast_z = precise_z["z"] + np.random.normal(0, 2, len(precise_z))
 
-broadcast_x = precise_x.copy()
-broadcast_y = precise_y.copy()
-broadcast_z = precise_z.copy()
-
-broadcast_x["position_x"] += np.random.normal(0, 2, len(broadcast_x))
-broadcast_y["position_y"] += np.random.normal(0, 2, len(broadcast_y))
-broadcast_z["position_z"] += np.random.normal(0, 2, len(broadcast_z))
-
-# -----------------------------
+# -------------------------------
 # COMPUTE ORBIT ERROR
-# -----------------------------
+# -------------------------------
 
 print("Computing orbit error...")
 
 orbit_error = np.sqrt(
-    (broadcast_x["position_x"] - precise_x["position_x"])**2 +
-    (broadcast_y["position_y"] - precise_y["position_y"])**2 +
-    (broadcast_z["position_z"] - precise_z["position_z"])**2
+    (broadcast_x - precise_x["x"])**2 +
+    (broadcast_y - precise_y["y"])**2 +
+    (broadcast_z - precise_z["z"])**2
 )
 
-# -----------------------------
+# -------------------------------
 # BUILD DATASET
-# -----------------------------
+# -------------------------------
 
 print("Creating dataset...")
 
 dataset = pd.DataFrame()
 
-dataset["clock_error"] = clock_error["SVclockBias"]
+dataset["clock_error"] = clock_error_df["clock_error"][:len(orbit_error)]
 dataset["orbit_error"] = orbit_error
 
 dataset["time"] = pd.date_range(
@@ -103,18 +100,20 @@ dataset["time"] = pd.date_range(
 
 dataset = dataset.set_index("time")
 
-# -----------------------------
+# -------------------------------
 # RESAMPLE TO 15 MINUTES
-# -----------------------------
+# -------------------------------
 
 dataset_15min = dataset.resample("15T").mean()
 
-# -----------------------------
+# -------------------------------
 # SAVE DATASET
-# -----------------------------
+# -------------------------------
 
 dataset_15min.to_csv("gnss_error_dataset.csv")
 
-print("Dataset saved as gnss_error_dataset.csv")
+print("\nDataset successfully created!")
+print("Saved as: gnss_error_dataset.csv")
 
+print("\nPreview:")
 print(dataset_15min.head())
