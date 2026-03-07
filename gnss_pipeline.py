@@ -112,9 +112,14 @@ dataset = dataset.set_index("time")
 
 dataset_15min = dataset.resample("15min").mean()
 
-# fill missing values
+# interpolate internal missing values
 dataset_15min["clock_error"] = dataset_15min["clock_error"].interpolate()
+
+# fill start/end NaNs
+dataset_15min["clock_error"] = dataset_15min["clock_error"].bfill().ffill()
+
 dataset_15min["orbit_error"] = dataset_15min["orbit_error"].interpolate()
+dataset_15min["orbit_error"] = dataset_15min["orbit_error"].bfill().ffill()
 # -------------------------------
 # SAVE DATASET
 # -------------------------------
