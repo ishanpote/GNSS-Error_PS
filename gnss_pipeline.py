@@ -101,7 +101,7 @@ dataset["orbit_error"] = orbit_error[:n]
 dataset["time"] = pd.date_range(
 start="2026-03-07",
 periods=n,
-freq="5T"
+freq="5min"
 )
 
 dataset = dataset.set_index("time")
