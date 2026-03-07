@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GNSS Error Prediction – Multi-Domain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================================================  TOAST  -->
+  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- ============================================================  HEADER  -->
+  <header class="app-header">
+    <div class="header-bg-grid"></div>
+    <div class="header-inner">
+
+      <div class="header-left">
+        <div class="logo">
+          <div class="logo-orb">
+            <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" width="28" height="28">
+              <circle cx="20" cy="20" r="8" stroke="currentColor" stroke-width="2"/>
+              <ellipse cx="20" cy="20" rx="18" ry="8" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2"/>
+              <ellipse cx="20" cy="20" rx="11" ry="18" stroke="currentColor" stroke-width="1.5" stroke-dasharray="3 2" transform="rotate(45 20 20)"/>
+              <circle cx="20" cy="4" r="2.5" fill="currentColor"/>
+            </svg>
+          </div>
+          <div>
+            <div class="logo-text">GNSS Error Prediction</div>
+            <div class="logo-sub">15-min Ensemble Forecasting</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="stat-pill">
+          <span class="stat-pill-dot"></span>
+          <span class="stat-pill-label">5 Models</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">&#127988;</span>
+          <span class="stat-pill-label">3 Domains</span>
+        </div>
+        <div class="api-status" id="api-status">
+          <span class="api-dot" id="api-dot"></span>
+          <span id="api-status-text">Connecting…</span>
+        </div>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- ============================================================  HERO CARDS  -->
+  <div class="hero-strip">
+    <div class="hero-inner">
+      <div class="hero-card">
+        <div class="hero-card-icon defense-accent-bg">&#127956;</div>
+        <div>
+          <div class="hero-card-title">Defense</div>
+          <div class="hero-card-sub">Navigation &amp; Targeting</div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-icon telecom-accent-bg">&#128225;</div>
+        <div>
+          <div class="hero-card-title">Telecommunication</div>
+          <div class="hero-card-sub">Network Sync &amp; Timing</div>
+        </div>
+      </div>
+      <div class="hero-card">
+        <div class="hero-card-icon aviation-accent-bg">&#9992;</div>
+        <div>
+          <div class="hero-card-title">Aviation</div>
+          <div class="hero-card-sub">Air Traffic Management</div>
+        </div>
+      </div>
+      <div class="hero-card hero-card--models">
+        <div class="model-badges">
+          <span class="mbadge">GRU</span>
+          <span class="mbadge">BiGRU</span>
+          <span class="mbadge">LSTM</span>
+          <span class="mbadge">BiLSTM</span>
+          <span class="mbadge">N-BEATS</span>
+        </div>
+        <div class="hero-card-sub" style="margin-top:.5rem">Voting Ensemble</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================  MAIN  -->
+  <main class="app-main">
+
+    <!-- Tab bar -->
+    <nav class="tab-bar" role="tablist" aria-label="Domain tabs">
+      <button class="tab-btn active" role="tab" aria-selected="true"
+        aria-controls="panel-defense" id="tab-defense" data-domain="defense">
+        <span class="tab-icon">&#127956;</span>
+        <span class="tab-label">Defense</span>
+        <span class="tab-pip"></span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="panel-telecommunication" id="tab-telecommunication" data-domain="telecommunication">
+        <span class="tab-icon">&#128225;</span>
+        <span class="tab-label">Telecommunication</span>
+        <span class="tab-pip"></span>
+      </button>
+      <button class="tab-btn" role="tab" aria-selected="false"
+        aria-controls="panel-aviation" id="tab-aviation" data-domain="aviation">
+        <span class="tab-icon">&#9992;</span>
+        <span class="tab-label">Aviation</span>
+        <span class="tab-pip"></span>
+      </button>
+      <!-- Add new <button> here to add a domain tab -->
+    </nav>
+
+    <!-- ----  Defense Panel  ---- -->
+    <section class="tab-panel active" role="tabpanel"
+      id="panel-defense" aria-labelledby="tab-defense">
+      <div class="panel-banner defense-banner">
+        <div class="panel-banner-content">
+          <h2>Defense Operations</h2>
+          <p>Predict GNSS positioning errors for navigation, precision targeting,
+             and autonomous vehicle guidance. Upload historical satellite &amp;
+             clock-error data to run an ensemble forecast.</p>
+        </div>
+        <div class="panel-banner-badge">DEFENSE</div>
+      </div>
+      <div class="panel-body">
+        <div id="form-defense"></div>
+        <div id="results-defense" class="results-container hidden"></div>
+      </div>
+    </section>
+
+    <!-- ----  Telecommunication Panel  ---- -->
+    <section class="tab-panel" role="tabpanel" hidden
+      id="panel-telecommunication" aria-labelledby="tab-telecommunication">
+      <div class="panel-banner telecom-banner">
+        <div class="panel-banner-content">
+          <h2>Telecommunication Networks</h2>
+          <p>Forecast GNSS timing errors that affect network synchronisation in
+             5G/LTE base-stations, PTP grandmaster clocks, and timing servers.</p>
+        </div>
+        <div class="panel-banner-badge">TELECOM</div>
+      </div>
+      <div class="panel-body">
+        <div id="form-telecommunication"></div>
+        <div id="results-telecommunication" class="results-container hidden"></div>
+      </div>
+    </section>
+
+    <!-- ----  Aviation Panel  ---- -->
+    <section class="tab-panel" role="tabpanel" hidden
+      id="panel-aviation" aria-labelledby="tab-aviation">
+      <div class="panel-banner aviation-banner">
+        <div class="panel-banner-content">
+          <h2>Aviation &amp; Air Traffic</h2>
+          <p>Monitor and predict GNSS positioning errors for aircraft navigation,
+             instrument landing systems, and air traffic management requiring
+             the highest precision guarantees.</p>
+        </div>
+        <div class="panel-banner-badge">AVIATION</div>
+      </div>
+      <div class="panel-body">
+        <div id="form-aviation"></div>
+        <div id="results-aviation" class="results-container hidden"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================  FOOTER  -->
+  <footer class="app-footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span>&#9901;</span>
+        GNSS Error Prediction &copy; 2026
+      </div>
+      <div class="footer-models">
+        <span class="footer-label">Ensemble:</span>
+        <span class="fm">GRU</span>
+        <span class="fm">BiGRU</span>
+        <span class="fm">LSTM</span>
+        <span class="fm">BiLSTM</span>
+        <span class="fm">Transformer</span>
+        <span class="fm">N-BEATS</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
