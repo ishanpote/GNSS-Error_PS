@@ -207,8 +207,8 @@ if uploaded_file:
     if missing:
         st.error(f"Uploaded CSV is missing columns: {missing}")
     else:
-        scaler_path = os.path.join(os.path.dirname(__file__), "..", "scaler", "scaler.pkl")
-        gp_scaler_path = os.path.join(os.path.dirname(__file__), "model", "scaler_gp.pkl")
+        scaler_path = os.path.join(os.path.dirname(__file__), "scaler", "scaler.pkl")
+        gp_scaler_path = os.path.join(os.path.dirname(__file__), "scaler", "scaler_gp.pkl")
         gp_model_path = os.path.join(os.path.dirname(__file__), "model", "GP_models.pkl")
         if not os.path.exists(scaler_path):
             st.error(f"Scaler file not found: {scaler_path}")
@@ -250,7 +250,7 @@ if uploaded_file:
             st.stop()
 
         # Model paths (adjust paths if needed)
-        model_dir = os.path.join(os.path.dirname(__file__), "..", "model")
+        model_dir = os.path.join(os.path.dirname(__file__), "model")
         model_paths = {
             "GRU": os.path.join(model_dir, "15min-best_gru_model_with_timesereas split.pth"),
             "biGRU": os.path.join(model_dir, "15min-best_bigru_model_with_timesereas split.pth"),
