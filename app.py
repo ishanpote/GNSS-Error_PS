@@ -9,6 +9,11 @@ import os
 import warnings
 from typing import Dict
 
+# Centralized project folders
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "model")
+SCALER_DIR = os.path.join(BASE_DIR, "scaler")
+
 # Suppress specific warnings
 warnings.filterwarnings('ignore', 'dropout option adds dropout after all but last recurrent layer')
 
@@ -122,7 +127,7 @@ def load_models(model_paths: Dict[str, str], device: torch.device, input_size=4,
     best_transformer_params = dict(d_model=128, nhead=4, num_layers=2, dim_feedforward=409, dropout=0.3, output_size=input_size)  # Transformer
     
     # Load Gaussian Process models if available
-    gp_model_path = os.path.join("model", "./model/GP_models.pkl")
+    gp_model_path = os.path.join(MODEL_DIR, "GP_models.pkl")
     if os.path.exists(gp_model_path):
         try:
             models['gaussian'] = joblib.load(gp_model_path)
@@ -132,7 +137,7 @@ def load_models(model_paths: Dict[str, str], device: torch.device, input_size=4,
     for name, path in model_paths.items():
         try:
             if not os.path.isabs(path):
-                path = os.path.join(os.path.dirname(__file__), path)
+                path = os.path.join(BASE_DIR, path)
             if not os.path.exists(path):
                 st.error(f"Model file not found: {path}")
                 continue
@@ -193,9 +198,9 @@ if uploaded_file:
     if missing:
         st.error(f"Uploaded CSV is missing columns: {missing}")
     else:
-        scaler_path = os.path.join(os.path.dirname(__file__), "..", "scaler", "scaler.pkl")
-        gp_scaler_path = os.path.join(os.path.dirname(__file__), "model", "scaler_gp.pkl")
-        gp_model_path = os.path.join(os.path.dirname(__file__), "model", "GP_models.pkl")
+        scaler_path = os.path.join(SCALER_DIR, "scaler.pkl")
+        gp_scaler_path = os.path.join(MODEL_DIR, "scaler_gp.pkl")
+        gp_model_path = os.path.join(MODEL_DIR, "GP_models.pkl")
         # Load main scaler
         if not os.path.exists(scaler_path):
             st.error(f"Scaler file not found: {scaler_path}")
@@ -240,7 +245,7 @@ if uploaded_file:
             st.stop()
 
         # Model paths (adjust paths if needed)
-        model_dir = os.path.join(os.path.dirname(__file__), "..", "model")
+        model_dir = MODEL_DIR
         model_paths = {
             "GRU": os.path.join(model_dir, "15min-best_gru_model_with_timesereas split.pth"),
             "biGRU": os.path.join(model_dir, "15min-best_bigru_model_with_timesereas split.pth"),
