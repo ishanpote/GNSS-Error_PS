@@ -108,9 +108,17 @@ class NBeatsModel(nn.Module):
             NBeatsBlock(input_size=input_size, theta_size=theta_size, hidden_size=hidden_size, n_layers=n_layers)
             for _ in range(n_blocks)
         ])
-        self.output_size = input_size
         self.points_per_day = points_per_day
         self.n_future_days = n_future_days
+        total_future_steps = self.n_future_days * self.points_per_day
+        if theta_size % total_future_steps != 0:
+            raise ValueError(
+                f"Invalid NBEATS config: theta_size={theta_size} is not divisible by "
+                f"n_future_days*points_per_day={total_future_steps}."
+            )
+        # Output channels correspond to forecast features (e.g., 4 GNSS error features),
+        # not the flattened input history length.
+        self.output_size = theta_size // total_future_steps
 
     def forward(self, x):
         out = 0
@@ -285,7 +293,6 @@ if uploaded_file:
         # Convert X_seq to tensor once
         X_tensor = torch.tensor(X_seq, dtype=torch.float32).to(device)  # (n_samples, seq_len, n_features)
 
-        preds_list = []
         preds_list = []
         with torch.no_grad():
             # Neural network and NBEATS models
