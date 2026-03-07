@@ -7,7 +7,6 @@ The Streamlit app takes a CSV containing recent GNSS error history (multiple day
 ---
 
 ## What this project does
-
 Given historical GNSS error signals:
 
 - `x_error(m)`
@@ -180,7 +179,6 @@ The apps load these models, run them on the prepared sequences, and then average
 ---
 
 ## Development
-
 ### Suggested improvements (optional)
 - Add a `requirements.txt` or update `pyproject.toml` dependencies to include `streamlit`, `pandas`, `numpy`, `joblib`, `scikit-learn`.
 - Add a small `data/` folder with a documented sample CSV (and a schema description).
