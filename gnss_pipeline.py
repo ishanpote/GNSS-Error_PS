@@ -112,6 +112,9 @@ dataset = dataset.set_index("time")
 
 dataset_15min = dataset.resample("15min").mean()
 
+# fill missing values
+dataset_15min["clock_error"] = dataset_15min["clock_error"].interpolate()
+dataset_15min["orbit_error"] = dataset_15min["orbit_error"].interpolate()
 # -------------------------------
 # SAVE DATASET
 # -------------------------------
