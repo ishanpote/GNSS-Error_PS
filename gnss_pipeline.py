@@ -6,9 +6,9 @@ import numpy as np
 # FILE PATHS
 # -----------------------------
 
-NAV_FILE = "project/brdc0660.26n"
-SP3_FILE = "project/GFZ0MGXRAP_20260660000_01D_05M_ORB.SP3"
-CLK_FILE = "project/GFZ0MGXRAP_20260660000_01D_30S_CLK.CLK"
+NAV_FILE = "project\\brdc0660.26n"
+SP3_FILE = "project\\GFZ0MGXRAP_20260660000_01D_05M_ORB.SP3"
+CLK_FILE = "project\\GFZ0MGXRAP_20260660000_01D_30S_CLK.CLK"
 
 # -----------------------------
 # LOAD NAVIGATION DATA
