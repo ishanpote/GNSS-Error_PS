@@ -188,3 +188,6 @@ The apps load these models, run them on the prepared sequences, and then average
 ---
 
 ## License
+
+No license file is currently included in this repository.
+If you plan to share or distribute this project, add a `LICENSE` file (for example, MIT, Apache-2.0, or proprietary terms).
