@@ -121,6 +121,7 @@ Upload a CSV containing at least these columns:
 - `x_error(m)`
 - `y_error(m)`
 - `z_error(m)`
+- `z_error(m)`
 - `satclockerror(m)`
 
 ### Data expectations
