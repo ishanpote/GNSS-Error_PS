@@ -13,7 +13,6 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
 SCALER_DIR = os.path.join(BASE_DIR, "scaler")
 
-# Suppress specific warnings
 warnings.filterwarnings('ignore', 'dropout option adds dropout after all but last recurrent layer')
 
 # -------------------------
