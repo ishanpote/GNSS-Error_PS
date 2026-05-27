@@ -9,7 +9,6 @@ import os
 import warnings
 from typing import Dict
 
-# Centralized project folders
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
 SCALER_DIR = os.path.join(BASE_DIR, "scaler")
